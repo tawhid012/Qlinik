@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Qlinik - Partner Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .role-card.active { border-color: #2563EB; background: #2563EB0F; transform: translateY(-4px); }
+        .role-card.active i { color: #2563EB; }
+        .form-container { animation: slideUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans min-h-screen py-10 px-6">
+
+    <div class="max-w-xl mx-auto space-y-10 form-container">
+        <!-- Header -->
+        <div class="text-center space-y-4">
+            <a href="../index.html" class="inline-block"><img src="../logo/primary.png" alt="Qlinik" class="h-10"></a>
+            <h1 class="text-4xl font-heading font-black text-slate-900 tracking-tight">Expand Your Practice.</h1>
+            <p class="text-slate-500 font-bold">Join the fastest growing digital healthcare network.</p>
+        </div>
+
+        <!-- Role Selection -->
+        <div class="grid grid-cols-2 gap-6">
+            <div onclick="selectRole('doctor')" id="role-doctor" class="role-card active p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] cursor-pointer transition-all hover:border-primary/30">
+                <div class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="user-plus" class="w-6 h-6 text-slate-400"></i>
+                </div>
+                <h3 class="font-heading font-black text-slate-900">I'm a Doctor</h3>
+                <p class="text-xs text-slate-400 font-bold mt-1">Manage tokens & schedule</p>
+            </div>
+            <div onclick="selectRole('clinic')" id="role-clinic" class="role-card p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] cursor-pointer transition-all hover:border-primary/30">
+                <div class="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-6">
+                    <i data-lucide="building-2" class="w-6 h-6 text-slate-400"></i>
+                </div>
+                <h3 class="font-heading font-black text-slate-900">I'm a Clinic</h3>
+                <p class="text-xs text-slate-400 font-bold mt-1">Full venue management</p>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <form class="bg-white p-10 rounded-[3rem] border border-white shadow-2xl shadow-slate-200/50 space-y-6" id="signup-form">
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Full Name / Facility Name</label>
+                <div class="relative group">
+                    <i data-lucide="user" class="absolute left-5 top-5 w-5 h-5 text-slate-300 transition group-focus-within:text-primary"></i>
+                    <input type="text" id="name" required placeholder="Dr. John Doe / City Hospital" class="w-full p-5 pl-14 bg-slate-50 border border-slate-50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-bold">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Email Address</label>
+                <div class="relative group">
+                    <i data-lucide="mail" class="absolute left-5 top-5 w-5 h-5 text-slate-300 transition group-focus-within:text-primary"></i>
+                    <input type="email" id="email" required placeholder="contact@example.com" class="w-full p-5 pl-14 bg-slate-50 border border-slate-50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-bold">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Password</label>
+                <div class="relative group">
+                    <i data-lucide="lock" class="absolute left-5 top-5 w-5 h-5 text-slate-300 transition group-focus-within:text-primary"></i>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full p-5 pl-14 bg-slate-50 border border-slate-50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-bold">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-xl hover:bg-primary transition shadow-2xl shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-3">
+                Create Account <i data-lucide="arrow-right" class="w-6 h-6"></i>
+            </button>
+
+            <p class="text-center text-xs font-bold text-slate-500">
+                Already have an account? <a href="login.html" class="text-primary hover:underline">Sign In</a>
+            </p>
+        </form>
+    </div>
+
+    <script type="module">
+        import { getSupabase } from '../js/supabase-client.js';
+        
+        lucide.createIcons();
+        let selectedRole = 'doctor';
+
+        window.selectRole = (role) => {
+            selectedRole = role;
+            document.getElementById('role-doctor').classList.toggle('active', role === 'doctor');
+            document.getElementById('role-clinic').classList.toggle('active', role === 'clinic');
+            
+            // Adjust label based on role
+            const nameLabel = document.querySelector('label[for="name"]') || document.querySelectorAll('label')[0];
+            nameLabel.innerText = role === 'doctor' ? 'Full Medical Name' : 'Clinic / Hospital Name';
+        };
+
+        const form = document.getElementById('signup-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            alert('Registration logic initiated for ' + selectedRole + ': ' + name + '\n\nIn production, this would trigger Supabase Auth signup and profile creation.');
+            // Flow:
+            // 1. supabase.auth.signUp()
+            // 2. Insert into 'profiles' with role
+            // 3. Insert into 'doctors' or 'clinics' table
+        });
+    </script>
+</body>
+</html>

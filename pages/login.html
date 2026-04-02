@@ -112,7 +112,7 @@
 
             <div class="mt-10 text-center space-y-4">
                 <p class="text-sm font-bold text-slate-500" id="signup-toggle">
-                    New to Qlinik? <a href="#" class="text-primary hover:underline">Join Free</a>
+                    New to Qlinik? <a href="signup.html" class="text-primary hover:underline">Join Free</a>
                 </p>
                 <div class="pt-6 border-t border-slate-100 flex justify-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                     <a href="#" class="hover:text-primary transition">Terms</a>
@@ -155,14 +155,9 @@
                 authSubtitle.innerText = details.subtitle;
                 signupToggle.classList.toggle('hidden', !details.signup);
 
-                // Auto-fill logic for demo purposes (can remove for production)
-                if (role === 'admin') {
-                   document.getElementById('username').value = 'Admin@Qlinik';
-                   document.getElementById('password').value = 'Qlinik@2026';
-                } else {
-                   document.getElementById('username').value = '';
-                   document.getElementById('password').value = '';
-                }
+                // Clear fields when switching roles
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
             });
         });
 

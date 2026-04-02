@@ -158,21 +158,69 @@
         import { getSupabase } from '../js/supabase-client.js';
         
         lucide.createIcons();
-        
-        async function loadAdminData() {
-            const supabase = getSupabase();
-            
+        const activityContainer = document.getElementById('activity-feed');
+        const supabase = getSupabase();
+
+        async function initDashboard() {
+            loadAdminStats();
+            loadTopDoctors();
+            setupRealtimeSubscriptions();
+        }
+
+        async function loadAdminStats() {
             try {
-                // 1. Get Top Level Stats
+                // 1. Get Core Counts
                 const { count: docCount } = await supabase.from('doctors').select('*', { count: 'exact', head: true });
                 const { count: clinicCount } = await supabase.from('clinics').select('*', { count: 'exact', head: true });
-                const { count: bookingCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true });
+                const { count: bookingCount } = await supabase.from('tokens').select('*', { count: 'exact', head: true });
 
                 document.getElementById('stat-doctors').innerText = docCount || 0;
                 document.getElementById('stat-clinics').innerText = clinicCount || 0;
                 document.getElementById('stat-bookings').innerText = bookingCount || 0;
 
-                // 2. Fetch Top Doctors
+                // 2. Calculate Real Revenue (Sum of fees for completed tokens)
+                const { data: completedTokens } = await supabase
+                    .from('tokens')
+                    .select('queue_id')
+                    .eq('status', 'completed');
+                
+                if (completedTokens?.length > 0) {
+                    const queueIds = [...new Set(completedTokens.map(t => t.queue_id))];
+                    
+                    // Fetch queues and their corresponding doctor_clinic fees
+                    const { data: queuesData } = await supabase
+                        .from('queues')
+                        .select('id, doctor_id, clinic_id')
+                        .in('id', queueIds);
+
+                    const { data: feesData } = await supabase
+                        .from('doctor_clinics')
+                        .select('doctor_id, clinic_id, consultation_fee');
+
+                    let totalRevenue = 0;
+                    completedTokens.forEach(token => {
+                        const q = queuesData.find(x => x.id === token.queue_id);
+                        if (q) {
+                            const feeRecord = feesData.find(f => f.doctor_id === q.doctor_id && f.clinic_id === q.clinic_id);
+                            if (feeRecord) totalRevenue += Number(feeRecord.consultation_fee);
+                        }
+                    });
+
+                    // Update UI (Formatting for large numbers)
+                    const revEl = document.querySelector('.text-3xl.font-heading[text="$14.2k"]') || 
+                                document.querySelector('.text-3xl.font-heading.text-slate-900.leading-tight:nth-child(2)');
+                    
+                    // Actually, let's target the 4th stat card specifically
+                    const revCounter = document.querySelectorAll('.text-3xl.font-heading')[3];
+                    if (revCounter) {
+                        revCounter.innerText = `₹${totalRevenue.toLocaleString()}`;
+                    }
+                }
+            } catch (err) { console.error('Stats Error:', err); }
+        }
+
+        async function loadTopDoctors() {
+            try {
                 const { data: topDocs } = await supabase
                     .from('doctors')
                     .select('*, profiles:user_id (full_name)')
@@ -186,37 +234,55 @@
                         <tr class="hover:bg-slate-50/50">
                             <td class="px-8 py-5 font-bold text-slate-800">${doc.profiles?.full_name}</td>
                             <td class="px-8 py-5 text-sm font-medium text-slate-400">${doc.specialization}</td>
-                            <td class="px-8 py-5 text-right font-black text-secondary">${doc.rating || '4.9'}</td>
+                            <td class="px-8 py-5 text-right font-black text-secondary">${doc.rating || '4.5'}</td>
                         </tr>
                     `);
                 });
-
-                // 3. Activity Feed
-                const activityContainer = document.getElementById('activity-feed');
-                activityContainer.innerHTML = `
-                    <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <div class="w-10 h-10 bg-secondary/10 text-secondary rounded-full flex items-center justify-center"><i data-lucide="user-check" class="w-5 h-5"></i></div>
-                        <div>
-                            <p class="text-sm font-black text-slate-900">Dr. Sarah updated availability</p>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">2 mins ago</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <div class="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"><i data-lucide="activity" class="w-5 h-5"></i></div>
-                        <div>
-                            <p class="text-sm font-black text-slate-900">32 New queue bookings today</p>
-                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Status</p>
-                        </div>
-                    </div>
-                `;
-                lucide.createIcons();
-
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error('Top Docs Error:', err); }
         }
 
-        window.addEventListener('load', loadAdminData);
+        function setupRealtimeSubscriptions() {
+            // Subscribe to token changes (Activity)
+            supabase
+                .channel('admin_activity')
+                .on('postgres_changes', { event: '*', table: 'tokens' }, async (payload) => {
+                    console.log('Real-time Token event:', payload);
+                    
+                    // Add to activity feed
+                    let activityMsg = "New activity detected";
+                    let icon = "zap";
+                    
+                    if (payload.eventType === 'INSERT') {
+                        activityMsg = "New appointment booking";
+                        icon = "activity";
+                    } else if (payload.eventType === 'UPDATE') {
+                        activityMsg = `Token status updated: ${payload.new.status}`;
+                        icon = "check-circle";
+                    }
+
+                    const newItem = `
+                        <div class="flex items-center gap-4 bg-primary/5 p-4 rounded-2xl border border-primary/10 animate-fade-in">
+                            <div class="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                                <i data-lucide="${icon}" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-slate-900">${activityMsg}</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Just now</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    activityContainer.insertAdjacentHTML('afterbegin', newItem);
+                    if (activityContainer.children.length > 5) activityContainer.removeChild(activityContainer.lastChild);
+                    
+                    lucide.createIcons();
+                    // Refetch stats to keep them live
+                    loadAdminStats();
+                })
+                .subscribe();
+        }
+
+        window.addEventListener('load', initDashboard);
     </script>
 </body>
 </html>
