@@ -108,7 +108,7 @@
                         <i data-lucide="dollar-sign" class="w-8 h-8"></i>
                     </div>
                     <div>
-                        <p class="text-3xl font-heading font-black text-slate-900 leading-tight">$14.2k</p>
+                        <p id="stat-revenue" class="text-3xl font-heading font-black text-slate-900 leading-tight">₹0</p>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Platform Rev.</p>
                     </div>
                 </div>
@@ -206,15 +206,13 @@
                         }
                     });
 
-                    // Update UI (Formatting for large numbers)
-                    const revEl = document.querySelector('.text-3xl.font-heading[text="$14.2k"]') || 
-                                document.querySelector('.text-3xl.font-heading.text-slate-900.leading-tight:nth-child(2)');
-                    
-                    // Actually, let's target the 4th stat card specifically
-                    const revCounter = document.querySelectorAll('.text-3xl.font-heading')[3];
+                    // Update UI
+                    const revCounter = document.getElementById('stat-revenue');
                     if (revCounter) {
                         revCounter.innerText = `₹${totalRevenue.toLocaleString()}`;
                     }
+                } else {
+                    document.getElementById('stat-revenue').innerText = '₹0';
                 }
             } catch (err) { console.error('Stats Error:', err); }
         }
@@ -242,6 +240,9 @@
         }
 
         function setupRealtimeSubscriptions() {
+            // Initial empty state for activity
+            activityContainer.innerHTML = '<p class="text-slate-400 font-bold italic text-center py-10">Waiting for live activity...</p>';
+
             // Subscribe to token changes (Activity)
             supabase
                 .channel('admin_activity')
