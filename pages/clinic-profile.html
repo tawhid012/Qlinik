@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Profile - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .hero-banner { background: #1F2937 url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1200') center/cover; }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans overflow-x-hidden pt-16">
+
+    <!-- Header -->
+    <header class="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-light h-16 flex items-center px-6">
+        <a href="../index.html" class="p-2 hover:bg-slate-100 rounded-full transition"><i data-lucide="arrow-left" class="w-6 h-6"></i></a>
+        <h1 class="ml-4 font-heading font-black text-xl">Clinic Overview</h1>
+    </header>
+
+    <main>
+        <!-- Clinic Hero -->
+        <section class="hero-banner h-80 relative flex items-end">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+            <div class="container mx-auto px-6 pb-12 relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="px-4 py-1.5 bg-secondary text-white rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">Open Now</span>
+                        <div class="flex items-center gap-1.5 text-orange-400">
+                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                            <span class="text-sm font-black text-white">4.8</span>
+                        </div>
+                    </div>
+                    <h2 id="clinic-name" class="text-4xl md:text-6xl font-heading font-black text-white tracking-tight">Loading Clinic...</h2>
+                    <div class="flex items-center gap-2 text-slate-300 font-bold">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                        <span id="clinic-address">Fetching location...</span>
+                    </div>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-[2rem] text-white flex gap-10">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Doctors</p>
+                        <p id="stat-doctors" class="text-2xl font-heading font-black">--</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Queue Total</p>
+                        <p id="stat-queue" class="text-2xl font-heading font-black">--</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="container mx-auto px-6 py-12 lg:py-24 grid grid-cols-1 lg:grid-cols-3 gap-16">
+            <!-- Left: Doctors List -->
+            <div class="lg:col-span-2 space-y-12">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-3xl font-heading font-black text-slate-900">Our Specialists</h3>
+                    <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Available Today</div>
+                </div>
+
+                <div id="doctors-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Skeletons -->
+                    <div class="h-48 skeleton rounded-[2rem]"></div>
+                    <div class="h-48 skeleton rounded-[2rem]"></div>
+                </div>
+            </div>
+
+            <!-- Right: Clinic Details -->
+            <div class="space-y-10">
+                <div class="bg-white p-10 rounded-[3rem] border border-light shadow-sm space-y-8">
+                    <h4 class="text-xl font-heading font-black">Clinic Information</h4>
+                    <div class="space-y-6">
+                        <div class="flex items-start gap-4">
+                            <i data-lucide="clock" class="w-6 h-6 text-primary shrink-0"></i>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Schedule</p>
+                                <p class="text-sm font-bold text-slate-700">09:00 AM - 09:00 PM</p>
+                                <p class="text-xs text-secondary font-bold">Open throughout the week</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <i data-lucide="phone" class="w-6 h-6 text-secondary shrink-0"></i>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Emergency Contact</p>
+                                <p class="text-sm font-bold text-slate-700">+91 91234 56789</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <i data-lucide="layers" class="w-6 h-6 text-accent shrink-0"></i>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amenities</p>
+                                <p class="text-sm font-bold text-slate-700">AC Cabin, Pharmacy, Lab</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-primary p-1 text-white flex flex-col items-center justify-center rounded-[3rem]">
+                    <div class="p-8 text-center space-y-4">
+                        <i data-lucide="shield-check" class="w-12 h-12 mx-auto opacity-50"></i>
+                        <h4 class="text-xl font-heading font-black">Verified Facility</h4>
+                        <p class="text-sm text-blue-100 font-medium">This clinic is part of the Qlinik verified network for contactless queue management.</p>
+                    </div>
+                </div>
+
+                <div id="gallery-container" class="grid grid-cols-2 gap-4">
+                    <div class="aspect-square bg-slate-200 rounded-2xl skeleton"></div>
+                    <div class="aspect-square bg-slate-200 rounded-2xl skeleton"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer copied from index.html -->
+    <footer class="bg-slate-900 pt-24 pb-12 text-slate-500 overflow-hidden relative">
+        <div class="container mx-auto px-6 text-center text-[10px] font-black uppercase tracking-widest">
+            <p>© 2024–2026 Qlinik Inc. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { getSupabase } from '../js/supabase-client.js';
+        
+        lucide.createIcons();
+        
+        async function loadClinicProfile() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clinicId = urlParams.get('id');
+            const supabase = getSupabase();
+
+            if (!clinicId) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            try {
+                // Fetch Clinic Details
+                const { data: clinic, error } = await supabase
+                    .from('clinics')
+                    .select('*')
+                    .eq('id', clinicId)
+                    .single();
+
+                if (error) throw error;
+                
+                document.getElementById('clinic-name').innerText = clinic.name;
+                document.getElementById('clinic-address').innerText = clinic.address || `${clinic.city}, ${clinic.location}`;
+
+                // Fetch Associated Doctors
+                const { data: doctorLinks } = await supabase
+                    .from('doctor_clinics')
+                    .select(`
+                        doctor_id,
+                        doctors (
+                            id,
+                            specialization,
+                            rating,
+                            profiles:user_id (full_name, avatar_url)
+                        )
+                    `)
+                    .eq('clinic_id', clinicId);
+
+                const statsDoctors = document.getElementById('stat-doctors');
+                const docList = document.getElementById('doctors-list');
+                statsDoctors.innerText = doctorLinks?.length || 0;
+                
+                if (!doctorLinks || doctorLinks.length === 0) {
+                    docList.innerHTML = '<p class="text-slate-400 font-bold italic py-10 col-span-2 text-center">No doctors found practicing at this venue.</p>';
+                    return;
+                }
+
+                docList.innerHTML = '';
+                doctorLinks.forEach(link => {
+                    const doc = link.doctors;
+                    const card = `
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-light shadow-sm flex flex-col justify-between hover:shadow-xl hover:border-primary/20 transition-all duration-300 group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 group-hover:scale-105 transition-transform">
+                                <img src="${doc.profiles?.avatar_url || 'https://images.unsplash.com/photo-1559839734-2b71f1e59816?auto=format&fit=crop&q=80&w=200'}" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h4 class="font-heading font-black text-slate-900">${doc.profiles.full_name}</h4>
+                                <p class="text-[10px] font-black text-primary uppercase tracking-widest">${doc.specialization}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pt-8">
+                            <div class="flex items-center gap-1.5 text-orange-400">
+                                <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                <span class="text-sm font-black text-slate-900">${doc.rating || '4.5'}</span>
+                            </div>
+                            <a href="doctor-profile.html?id=${doc.id}" class="px-6 py-2.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary transition shadow-xl shadow-slate-900/10">
+                                View & Join Queue
+                            </a>
+                        </div>
+                    </div>`;
+                    docList.insertAdjacentHTML('beforeend', card);
+                });
+
+                // Fetch Global Queue stat for this clinic
+                const { count: queueCount } = await supabase
+                    .from('appointments')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('clinic_id', clinicId)
+                    .eq('status', 'waiting');
+                
+                document.getElementById('stat-queue').innerText = queueCount || 0;
+                
+                lucide.createIcons();
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        window.addEventListener('load', loadClinicProfile);
+    </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .role-btn.active { border-color: #2563EB; background: #2563EB0F; }
+        .role-btn.active i { color: #2563EB; }
+        .auth-container { animation: slideUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans min-h-screen flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.05),transparent)]">
+
+    <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-12 items-center auth-container">
+        
+        <!-- Left: Marketing/Context -->
+        <div class="hidden md:block space-y-10 pr-12 border-r border-slate-200">
+            <a href="../index.html" class="inline-block"><img src="../logo/primary.png" alt="Qlinik" class="h-10"></a>
+            <h1 class="text-6xl font-heading font-black text-slate-900 leading-[1.1] tracking-tight">Your Health,<br> One Token Away.</h1>
+            <p class="text-xl text-slate-500 font-medium leading-relaxed max-w-sm">Access your personalized dashboard to manage queues, schedules, and clinical operations in real-time.</p>
+            
+            <div class="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-slate-400">
+                <div class="flex -space-x-3">
+                    <div class="w-10 h-10 bg-primary/20 rounded-full border-4 border-slate-50"></div>
+                    <div class="w-10 h-10 bg-secondary/20 rounded-full border-4 border-slate-50"></div>
+                    <div class="w-10 h-10 bg-accent/20 rounded-full border-4 border-slate-50"></div>
+                </div>
+                <span>Trusted by 10k+ and counting</span>
+            </div>
+        </div>
+
+        <!-- Right: Auth UI -->
+        <div class="bg-white rounded-[3rem] p-10 md:p-16 border border-white shadow-2xl shadow-slate-200/50">
+            <div class="mb-12 text-center md:text-left">
+                <img src="../logo/primary.png" alt="Qlinik Logo" class="h-8 mb-8 md:hidden mx-auto">
+                <h2 class="text-3xl font-heading font-black text-slate-900 tracking-tight" id="auth-title">Welcome Back.</h2>
+                <p class="text-slate-500 font-bold mt-2" id="auth-subtitle">Choose your access type to continue.</p>
+            </div>
+
+            <!-- Role Selector Cards -->
+            <div class="grid grid-cols-2 gap-4 mb-10">
+                <button class="role-btn active p-5 border-2 border-slate-100 rounded-[1.5rem] text-left transition-all hover:border-primary/30" data-role="patient">
+                    <i data-lucide="user" class="w-6 h-6 text-slate-300 mb-4 transition"></i>
+                    <p class="font-black text-xs uppercase tracking-widest text-slate-900">Patient</p>
+                </button>
+                <button class="role-btn p-5 border-2 border-slate-100 rounded-[1.5rem] text-left transition-all hover:border-primary/30" data-role="doctor">
+                    <i data-lucide="user-plus" class="w-6 h-6 text-slate-300 mb-4 transition"></i>
+                    <p class="font-black text-xs uppercase tracking-widest text-slate-900">Doctor</p>
+                </button>
+                <button class="role-btn p-5 border-2 border-slate-100 rounded-[1.5rem] text-left transition-all hover:border-primary/30" data-role="clinic">
+                    <i data-lucide="building-2" class="w-6 h-6 text-slate-300 mb-4 transition"></i>
+                    <p class="font-black text-xs uppercase tracking-widest text-slate-900">Clinic</p>
+                </button>
+                <button class="role-btn p-5 border-2 border-slate-100 rounded-[1.5rem] text-left transition-all hover:border-primary/30" data-role="admin">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-slate-300 mb-4 transition"></i>
+                    <p class="font-black text-xs uppercase tracking-widest text-slate-900">Admin</p>
+                </button>
+            </div>
+
+            <form class="space-y-6" id="login-form">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Email or Username</label>
+                    <div class="relative group">
+                        <i data-lucide="mail" class="absolute left-5 top-5 w-5 h-5 text-slate-300 transition group-focus-within:text-primary"></i>
+                        <input type="text" id="username" required placeholder="name@example.com" class="w-full p-5 pl-14 bg-slate-50 border border-slate-50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-bold">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center px-2">
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Password</label>
+                        <a href="#" class="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Forgot?</a>
+                    </div>
+                    <div class="relative group">
+                        <i data-lucide="lock" class="absolute left-5 top-5 w-5 h-5 text-slate-300 transition group-focus-within:text-primary"></i>
+                        <input type="password" id="password" required placeholder="••••••••" class="w-full p-5 pl-14 bg-slate-50 border border-slate-50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-bold">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 px-2">
+                    <input type="checkbox" id="remember" class="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary">
+                    <label for="remember" class="text-xs font-bold text-slate-500">Keep me logged in</label>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-xl hover:bg-primary transition shadow-2xl shadow-slate-900/10 active:scale-95 flex items-center justify-center gap-3">
+                    Access Portal <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                </button>
+            </form>
+
+            <div class="mt-10 text-center space-y-4">
+                <p class="text-sm font-bold text-slate-500" id="signup-toggle">
+                    New to Qlinik? <a href="#" class="text-primary hover:underline">Join Free</a>
+                </p>
+                <div class="pt-6 border-t border-slate-100 flex justify-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <a href="#" class="hover:text-primary transition">Terms</a>
+                    <a href="#" class="hover:text-primary transition">Security</a>
+                    <a href="#" class="hover:text-primary transition">Privacy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const roleBtns = document.querySelectorAll('.role-btn');
+        const authTitle = document.getElementById('auth-title');
+        const authSubtitle = document.getElementById('auth-subtitle');
+        const signupToggle = document.getElementById('signup-toggle');
+        const loginForm = document.getElementById('login-form');
+        
+        let activeRole = 'patient';
+
+        const roleDetails = {
+            patient: { title: 'Welcome Back.', subtitle: 'Access your medical queues and history.', signup: true },
+            doctor: { title: 'Doctor Console.', subtitle: 'Manage your patients and availability.', signup: false },
+            clinic: { title: 'Clinic Operations.', subtitle: 'Control queue flow and clinic settings.', signup: false },
+            admin: { title: 'Admin Hub.', subtitle: 'Platform-wide analytics and oversight.', signup: false }
+        };
+
+        roleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const role = btn.dataset.role;
+                activeRole = role;
+                
+                // UI Updates
+                roleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const details = roleDetails[role];
+                authTitle.innerText = details.title;
+                authSubtitle.innerText = details.subtitle;
+                signupToggle.classList.toggle('hidden', !details.signup);
+
+                // Auto-fill logic for demo purposes (can remove for production)
+                if (role === 'admin') {
+                   document.getElementById('username').value = 'Admin@Qlinik';
+                   document.getElementById('password').value = 'Qlinik@2026';
+                } else {
+                   document.getElementById('username').value = '';
+                   document.getElementById('password').value = '';
+                }
+            });
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            // Simplified Mock RBAC Redirects
+            if (user === 'Admin@Qlinik' && pass === 'Qlinik@2026') {
+                window.location.href = 'dashboard-admin.html';
+            } else if (activeRole === 'doctor') {
+                window.location.href = 'dashboard-doctor.html';
+            } else if (activeRole === 'clinic') {
+                window.location.href = 'dashboard-clinic.html';
+            } else if (activeRole === 'patient') {
+                window.location.href = '../index.html';
+            } else {
+                alert('Invalid role or credentials.');
+            }
+        });
+    </script>
+</body>
+</html>

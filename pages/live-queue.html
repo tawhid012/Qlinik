@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Queue - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .pulse-secondary { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .ticket { border-radius: 40px; background: white; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.1); position: relative; }
+        .ticket::after { content: ''; position: absolute; bottom: 25%; left: 0; right: 0; border-top: 2px dashed #F1F5F9; }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-primary text-white font-sans min-h-screen pt-20">
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 h-20 flex items-center px-8 z-50 bg-primary-dark">
+        <a href="../index.html" class="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 hover:bg-white/20 transition">
+            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+        </a>
+        <h1 class="ml-4 font-heading font-black text-xl">Live Tracking</h1>
+        <div class="ml-auto">
+            <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                <span class="w-2 h-2 bg-secondary rounded-full pulse-secondary"></span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-secondary">Syncing Live</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-lg px-6 py-12 space-y-12">
+        
+        <!-- Live Ticket Card -->
+        <div class="ticket p-10 text-dark space-y-12 relative overflow-hidden">
+            <!-- Now Serving Area -->
+            <div class="text-center space-y-6">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">NOW SERVING</p>
+                    <div id="now-serving" class="text-9xl font-heading font-black text-primary leading-tight">--</div>
+                </div>
+                
+                <div class="inline-flex items-center gap-3 bg-slate-50 px-6 py-3 rounded-full border border-slate-100">
+                    <i data-lucide="info" class="w-4 h-4 text-primary"></i>
+                    <p class="text-xs font-bold text-slate-700">Token <span class="font-black" id="current-token">--</span> is inside</p>
+                </div>
+            </div>
+
+            <!-- User Tracking Bar -->
+            <div class="p-8 bg-slate-900 rounded-[2.5rem] text-white flex justify-between items-center relative overflow-hidden shadow-2xl">
+                <div class="relative z-10">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Your Entry</p>
+                    <p class="text-3xl font-heading font-black" id="user-token">Token --</p>
+                </div>
+                <div class="relative z-10 text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">WAITING</p>
+                    <p class="text-3xl font-heading font-black text-secondary" id="ppl-ahead">--</p>
+                </div>
+                <i data-lucide="user" class="absolute -right-4 -bottom-4 w-24 h-24 opacity-5 rotate-12"></i>
+            </div>
+
+            <!-- Footer Details -->
+            <div class="text-center pt-10 border-t border-slate-50 border-dashed">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Est. Remaining Wait</p>
+                <div class="flex items-center justify-center gap-4">
+                    <i data-lucide="clock" class="w-6 h-6 text-primary"></i>
+                    <p class="text-2xl font-black text-slate-900" id="wait-time">--</p>
+                </div>
+            </div>
+            
+            <i data-lucide="activity" class="absolute -left-20 -bottom-20 w-48 h-48 opacity-[0.02]"></i>
+        </div>
+
+        <!-- Appointment Context Area -->
+        <div class="p-10 bg-white/10 backdrop-blur-md rounded-[3.5rem] border border-white/20 text-white space-y-8">
+            <h3 class="font-heading font-black text-2xl flex items-center gap-3">
+                <i data-lucide="hospital" class="w-8 h-8 opacity-50"></i> Facility Info
+            </h3>
+            
+            <div class="space-y-6">
+                <div class="bg-white/5 p-6 rounded-3xl border border-white/10 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-black opacity-50 uppercase tracking-widest mb-1">Clinic Center</p>
+                        <p id="clinic-name" class="font-black text-lg">Loading...</p>
+                    </div>
+                </div>
+                <div class="bg-white/5 p-6 rounded-3xl border border-white/10 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-black opacity-50 uppercase tracking-widest mb-1">Consulting Doctor</p>
+                        <p id="doc-name" class="font-black text-lg">Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-6">
+                 <button id="cancel-btn" class="w-full py-5 bg-rose-500/20 text-rose-200 border border-rose-500/30 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-500/30 transition shadow-xl shadow-rose-900/10">
+                    Not coming? Cancel Appointment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-12 text-center text-white/50 space-y-4">
+        <p class="text-xs font-black uppercase tracking-[0.2em]">Keep this page open for live updates.</p>
+        <p class="text-[10px] font-bold">Powered by Qlinik Smart Queue Layer v2.0</p>
+    </footer>
+
+    <!-- App Script -->
+    <script type="module">
+        import { dataService } from '../js/services/data-service.js';
+        import { getSupabase } from '../js/supabase-client.js';
+        
+        lucide.createIcons();
+        
+        async function initTracker() {
+            const params = new URLSearchParams(window.location.search);
+            const apptId = params.get('id');
+            const supabase = getSupabase();
+
+            if (!apptId) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            try {
+                // Fetch Appointment Details
+                const { data: appt, error } = await supabase
+                    .from('appointments')
+                    .select(`
+                        *,
+                        doctors ( profiles:user_id (full_name) ),
+                        clinics ( name )
+                    `)
+                    .eq('id', apptId)
+                    .single();
+
+                if (error) throw error;
+                renderTracker(appt);
+
+                // Real-time listener for current day's bookings for this doctor/clinic
+                supabase
+                    .channel(`queue-updates:${appt.doctor_id}`)
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+                        updateQueueStats(appt);
+                    })
+                    .subscribe();
+
+                updateQueueStats(appt); // Initial stat load
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function updateQueueStats(appt) {
+            const supabase = getSupabase();
+            
+            // Get "Now Serving" token
+            const { data: servingData } = await supabase
+                .from('appointments')
+                .select('token_number')
+                .eq('doctor_id', appt.doctor_id)
+                .eq('clinic_id', appt.clinic_id)
+                .eq('status', 'serving')
+                .order('updated_at', { ascending: false })
+                .limit(1);
+            
+            const currentToken = servingData && servingData[0] ? servingData[0].token_number : 0;
+            document.getElementById('now-serving').innerText = String(currentToken).padStart(2, '0');
+            document.getElementById('current-token').innerText = String(currentToken).padStart(2, '0');
+            
+            const ahead = Math.max(0, appt.token_number - currentToken);
+            document.getElementById('ppl-ahead').innerText = ahead > 0 ? ahead : 'IN SERVICE';
+            document.getElementById('wait-time').innerText = ahead > 0 ? `~${ahead * 15} mins` : 'NOW';
+        }
+
+        function renderTracker(appt) {
+            document.getElementById('user-token').innerText = `Token ${String(appt.token_number).padStart(2, '0')}`;
+            document.getElementById('doc-name').innerText = appt.doctors?.profiles?.full_name || 'Verified Specialist';
+            document.getElementById('clinic-name').innerText = appt.clinics?.name || 'Practicing Venue';
+        }
+
+        window.addEventListener('load', initTracker);
+    </script>
+</body>
+</html>

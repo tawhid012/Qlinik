@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Admin - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .sidebar-item.active { background: white; color: #1F2937; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="hidden lg:flex flex-col w-72 bg-slate-900 border-r border-slate-800 sticky top-0 h-screen text-slate-300">
+        <div class="p-8">
+            <img src="../logo/primary.png" alt="Qlinik Logo" class="h-10 brightness-0 invert">
+        </div>
+        
+        <nav class="flex-1 px-4 space-y-2">
+            <a href="#" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition">
+                <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                <span>Analytics Hub</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl font-medium transition">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+                <span>Clinics Management</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 hover:bg-white/5 rounded-xl font-medium transition">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span>Doctors Database</span>
+            </a>
+        </nav>
+        
+        <div class="p-6 border-t border-slate-800">
+            <button class="w-full flex items-center justify-center gap-2 py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white transition">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-x-hidden">
+        <header class="h-20 bg-white border-b border-light px-8 flex items-center justify-between sticky top-0 z-30">
+            <h1 class="text-xl font-heading font-extrabold">Platform Analytics</h1>
+            <div class="flex items-center gap-4 text-xs font-bold text-secondary">
+                <span class="w-2 h-2 bg-secondary rounded-full animate-pulse"></span> DB: Cloud Live
+            </div>
+        </header>
+
+        <div class="p-8">
+            <!-- Global Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                    <div class="w-16 h-16 bg-primary/10 text-primary rounded-3xl flex items-center justify-center">
+                        <i data-lucide="users" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <p id="stat-doctors" class="text-3xl font-heading font-black text-slate-900 leading-tight">--</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Doctors</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                    <div class="w-16 h-16 bg-secondary/10 text-secondary rounded-3xl flex items-center justify-center">
+                        <i data-lucide="building-2" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <p id="stat-clinics" class="text-3xl font-heading font-black text-slate-900 leading-tight">--</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Registered Clinics</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                    <div class="w-16 h-16 bg-accent/10 text-accent rounded-3xl flex items-center justify-center">
+                        <i data-lucide="zap" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <p id="stat-bookings" class="text-3xl font-heading font-black text-slate-900 leading-tight">--</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Bookings</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                    <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-3xl flex items-center justify-center">
+                        <i data-lucide="dollar-sign" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <p class="text-3xl font-heading font-black text-slate-900 leading-tight">$14.2k</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Platform Rev.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Grid -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <!-- Top Doctors Table -->
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-light">
+                        <h2 class="text-xl font-heading font-black">Top Doctors</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                <tr>
+                                    <th class="px-8 py-4">Specialist</th>
+                                    <th class="px-8 py-4">Waitlist Hits</th>
+                                    <th class="px-8 py-4 text-right">Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-doctors-tbody" class="divide-y divide-slate-50">
+                                <!-- Skeletons -->
+                                <tr><td class="px-8 py-6 h-16 skeleton"></td><td class="skeleton"></td><td class="skeleton"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Registrations -->
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-light">
+                        <h2 class="text-xl font-heading font-black">Recent Activity</h2>
+                    </div>
+                    <div id="activity-feed" class="p-8 space-y-6">
+                        <!-- Feed Items loaded here -->
+                        <div class="flex gap-4 p-4 skeleton h-16 rounded-2xl"></div>
+                        <div class="flex gap-4 p-4 skeleton h-16 rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- App Script -->
+    <script type="module">
+        import { getSupabase } from '../js/supabase-client.js';
+        
+        lucide.createIcons();
+        
+        async function loadAdminData() {
+            const supabase = getSupabase();
+            
+            try {
+                // 1. Get Top Level Stats
+                const { count: docCount } = await supabase.from('doctors').select('*', { count: 'exact', head: true });
+                const { count: clinicCount } = await supabase.from('clinics').select('*', { count: 'exact', head: true });
+                const { count: bookingCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true });
+
+                document.getElementById('stat-doctors').innerText = docCount || 0;
+                document.getElementById('stat-clinics').innerText = clinicCount || 0;
+                document.getElementById('stat-bookings').innerText = bookingCount || 0;
+
+                // 2. Fetch Top Doctors
+                const { data: topDocs } = await supabase
+                    .from('doctors')
+                    .select('*, profiles:user_id (full_name)')
+                    .order('rating', { ascending: false })
+                    .limit(5);
+                
+                const tbody = document.getElementById('top-doctors-tbody');
+                tbody.innerHTML = '';
+                topDocs?.forEach(doc => {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr class="hover:bg-slate-50/50">
+                            <td class="px-8 py-5 font-bold text-slate-800">${doc.profiles?.full_name}</td>
+                            <td class="px-8 py-5 text-sm font-medium text-slate-400">${doc.specialization}</td>
+                            <td class="px-8 py-5 text-right font-black text-secondary">${doc.rating || '4.9'}</td>
+                        </tr>
+                    `);
+                });
+
+                // 3. Activity Feed
+                const activityContainer = document.getElementById('activity-feed');
+                activityContainer.innerHTML = `
+                    <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div class="w-10 h-10 bg-secondary/10 text-secondary rounded-full flex items-center justify-center"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-sm font-black text-slate-900">Dr. Sarah updated availability</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">2 mins ago</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div class="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"><i data-lucide="activity" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-sm font-black text-slate-900">32 New queue bookings today</p>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Status</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        window.addEventListener('load', loadAdminData);
+    </script>
+</body>
+</html>

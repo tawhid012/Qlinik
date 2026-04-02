@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Dashboard - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .sidebar-item.active { background: #2563EB; color: white; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }
+        .queue-item { animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="hidden lg:flex flex-col w-72 bg-white border-r border-light sticky top-0 h-screen p-8">
+        <img src="../logo/primary.png" alt="Qlinik Logo" class="h-10 mb-12">
+        <nav class="flex-1 space-y-2">
+            <a href="#" class="sidebar-item active flex items-center gap-3 px-5 py-4 rounded-2xl font-bold transition">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span>Queue Control</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-400 font-bold hover:bg-slate-100 transition">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span>Patients</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-400 font-bold hover:bg-slate-100 transition">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+                <span>Schedule</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-400 font-bold hover:bg-slate-100 transition">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        <div class="pt-8 border-t border-slate-100">
+            <button class="flex items-center gap-3 px-5 py-4 w-full text-rose-500 font-black uppercase tracking-widest text-[10px] hover:bg-rose-50 rounded-2xl transition">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 md:p-12 overflow-y-auto">
+        <header class="flex justify-between items-end mb-12">
+            <div class="space-y-1">
+                <h1 class="text-4xl font-heading font-black text-slate-900 tracking-tight">Queue Control</h1>
+                <p class="text-slate-500 font-bold">Managing <span id="clinic-name-header" class="text-primary">Loading...</span></p>
+            </div>
+            <div class="flex gap-4">
+                <button id="add-walk-in" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-sm hover:bg-primary transition shadow-xl shadow-slate-900/10 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i> Walk-in Patient
+                </button>
+            </div>
+        </header>
+
+        <!-- Live Status Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                <div class="w-16 h-16 bg-primary/10 text-primary rounded-3xl flex items-center justify-center">
+                    <i data-lucide="play-circle" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Now Serving</p>
+                    <p id="stat-serving" class="text-3xl font-heading font-black text-slate-900">--</p>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                <div class="w-16 h-16 bg-secondary/10 text-secondary rounded-3xl flex items-center justify-center">
+                    <i data-lucide="users" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">In Queue</p>
+                    <p id="stat-waiting" class="text-3xl font-heading font-black text-slate-900">--</p>
+                </div>
+            </div>
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-6">
+                <div class="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-3xl flex items-center justify-center">
+                    <i data-lucide="clock" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg. Time</p>
+                    <p class="text-3xl font-heading font-black text-slate-900">12m</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Queue List -->
+        <div class="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div class="p-8 border-b border-light flex items-center justify-between">
+                <h2 class="text-2xl font-heading font-black text-slate-900">Patient Waiting List</h2>
+                <div class="flex items-center gap-2 text-secondary font-bold text-xs uppercase tracking-widest">
+                    <span class="w-2 h-2 bg-secondary rounded-full animate-pulse"></span> Live Sync
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                        <tr>
+                            <th class="px-8 py-5">Token</th>
+                            <th class="px-8 py-5">Patient Name</th>
+                            <th class="px-8 py-5">Status</th>
+                            <th class="px-8 py-5">Requested Doctor</th>
+                            <th class="px-8 py-5 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queue-tbody" class="divide-y divide-slate-50">
+                        <!-- Skeletons -->
+                        <tr>
+                            <td class="px-8 py-8"><div class="h-10 w-10 skeleton rounded-full"></div></td>
+                            <td class="px-8 py-8"><div class="h-6 w-48 skeleton rounded"></div></td>
+                            <td class="px-8 py-8"><div class="h-8 w-24 skeleton rounded-full"></div></td>
+                            <td class="px-8 py-8"><div class="h-6 w-32 skeleton rounded"></div></td>
+                            <td class="px-8 py-8"><div class="h-10 w-32 skeleton rounded-xl ml-auto"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="empty-queue" class="hidden py-32 text-center space-y-4">
+                <div class="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto">
+                    <i data-lucide="coffee" class="w-10 h-10"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-400">Rest time! The queue is empty.</h3>
+            </div>
+        </div>
+    </main>
+
+    <!-- App Script -->
+    <script type="module">
+        import { getSupabase } from '../js/supabase-client.js';
+        
+        lucide.createIcons();
+        
+        // Context (Mocked for dashboard access)
+        const myClinicId = '8902-clinic-id'; // This would come from auth session
+
+        async function loadDashboard() {
+            const supabase = getSupabase();
+            const today = new Date().toISOString().split('T')[0];
+
+            try {
+                // Initial Fetch
+                const { data, error } = await supabase
+                    .from('appointments')
+                    .select(`
+                        *,
+                        doctors ( profiles:user_id (full_name) )
+                    `)
+                    .order('token_number', { ascending: true })
+                    .eq('queue_date', today);
+
+                if (error) throw error;
+                renderQueue(data);
+
+                // Real-time listener for current day's bookings
+                supabase
+                    .channel('clinic-dashboard')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, (payload) => {
+                        console.log('Update detected:', payload);
+                        loadDashboard(); // Refresh on any change
+                    })
+                    .subscribe();
+
+            } catch (err) {
+                console.error('Dashboard Error:', err);
+            }
+        }
+
+        async function updateStatus(id, newStatus) {
+            const supabase = getSupabase();
+            try {
+                const { error } = await supabase
+                    .from('appointments')
+                    .update({ status: newStatus, updated_at: new Date() })
+                    .eq('id', id);
+                if (error) throw error;
+                // Success - real-time listener will trigger refresh
+            } catch (err) {
+                alert('Action failed: ' + err.message);
+            }
+        }
+
+        function renderQueue(appointments) {
+            const tbody = document.getElementById('queue-tbody');
+            const emptyState = document.getElementById('empty-queue');
+            
+            if (!appointments || appointments.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                document.getElementById('stat-serving').innerText = '--';
+                document.getElementById('stat-waiting').innerText = '0';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            tbody.innerHTML = '';
+
+            let servingCount = 0;
+            let waitingCount = 0;
+
+            appointments.forEach(appt => {
+                if (appt.status === 'serving') servingCount = appt.token_number;
+                if (appt.status === 'waiting') waitingCount++;
+
+                const row = `
+                <tr class="hover:bg-slate-50/50 transition queue-item">
+                    <td class="px-8 py-6">
+                        <div class="w-12 h-12 bg-primary/5 text-primary rounded-2xl flex items-center justify-center font-black text-xl">
+                            ${String(appt.token_number).padStart(2, '0')}
+                        </div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="font-black text-slate-900">${appt.patient_info?.full_name}</p>
+                        <p class="text-xs font-bold text-slate-400 capitalize">${appt.patient_info?.gender || 'Patient'} • Age ${appt.patient_info?.age || '--'}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest 
+                            ${appt.status === 'waiting' ? 'bg-orange-50 text-orange-500' : ''}
+                            ${appt.status === 'serving' ? 'bg-secondary text-white' : ''}
+                            ${appt.status === 'completed' ? 'bg-slate-100 text-slate-400' : ''}
+                            ${appt.status === 'skipped' ? 'bg-rose-50 text-rose-500' : ''}
+                        ">
+                            ${appt.status}
+                        </span>
+                    </td>
+                    <td class="px-8 py-6 font-bold text-slate-500 text-sm">
+                        ${appt.doctors?.profiles?.full_name || 'Assigned'}
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        <div class="flex justify-end gap-2">
+                            ${appt.status === 'waiting' ? `
+                                <button onclick="updateStatus('${appt.id}', 'serving')" class="p-3 bg-secondary text-white rounded-xl hover:scale-105 transition shadow-lg shadow-secondary/20">
+                                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                                </button>
+                            ` : ''}
+                            ${appt.status === 'serving' ? `
+                                <button onclick="updateStatus('${appt.id}', 'completed')" class="p-3 bg-primary text-white rounded-xl hover:scale-105 transition shadow-lg shadow-primary/20">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </button>
+                            ` : ''}
+                            ${appt.status !== 'completed' && appt.status !== 'skipped' ? `
+                                <button onclick="updateStatus('${appt.id}', 'skipped')" class="p-3 bg-slate-50 text-slate-400 rounded-xl hover:text-rose-500 transition">
+                                    <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+
+            document.getElementById('stat-serving').innerText = servingCount ? String(servingCount).padStart(2, '0') : '--';
+            document.getElementById('stat-waiting').innerText = waitingCount;
+            
+            lucide.createIcons();
+        }
+
+        // Attach global status updater
+        window.updateStatus = updateStatus;
+
+        window.addEventListener('load', loadDashboard);
+    </script>
+</body>
+</html>

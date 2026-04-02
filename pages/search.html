@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Doctors - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .filter-item:hover { background: #2563EB0F; color: #2563EB; }
+        .card-depth { border: 1px solid #F1F5F9; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-depth:hover { border-color: #2563EB33; transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans overflow-x-hidden pt-16">
+
+    <!-- Header -->
+    <header class="fixed top-0 w-full z-50 bg-white border-b border-light h-16 flex items-center px-6">
+        <a href="../index.html" class="p-2 hover:bg-slate-100 rounded-full transition"><i data-lucide="arrow-left" class="w-6 h-6"></i></a>
+        <h1 class="ml-4 font-heading font-black text-xl">Find Specialists</h1>
+    </header>
+
+    <div class="container mx-auto px-6 py-10 flex flex-col lg:flex-row gap-12">
+        <!-- Sidebar Filters -->
+        <aside class="w-full lg:w-80 space-y-8 h-fit lg:sticky lg:top-28">
+            <div class="bg-white p-8 rounded-[2.5rem] border border-light shadow-sm space-y-8">
+                <div>
+                    <h3 class="text-xl font-heading font-black mb-6">Filter By</h3>
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Location</label>
+                            <div class="relative">
+                                <i data-lucide="map-pin" class="absolute left-4 top-3.5 w-4 h-4 text-slate-300"></i>
+                                <input type="text" id="search-location" placeholder="City or Area" class="w-full p-3 pl-10 bg-slate-50 border border-slate-50 rounded-xl focus:outline-none focus:border-primary transition font-bold text-sm">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Specialization</label>
+                            <div class="relative">
+                                <i data-lucide="search" class="absolute left-4 top-3.5 w-4 h-4 text-slate-300"></i>
+                                <input type="text" id="search-spec" placeholder="e.g. Cardiologist" class="w-full p-3 pl-10 bg-slate-50 border border-slate-50 rounded-xl focus:outline-none focus:border-primary transition font-bold text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-slate-100">
+                    <button id="apply-filters" class="w-full bg-slate-900 text-white py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest hover:bg-primary transition shadow-xl shadow-slate-900/10">
+                        Update Results
+                    </button>
+                </div>
+            </div>
+
+            <!-- Suggestion Card -->
+            <div class="bg-primary p-1 text-white rounded-[2.5rem]">
+                <div class="p-8 space-y-4">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-60">Pro Tip</p>
+                    <p class="font-bold text-sm leading-relaxed">Join the queue from home and save at least 45 minutes of travel time.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Results Main -->
+        <main class="flex-1 space-y-10">
+            <div class="flex flex-col md:flex-row justify-between md:items-end gap-6">
+                <div>
+                    <h2 class="text-4xl font-heading font-black text-slate-900 tracking-tight" id="results-title">Scanning Specialists...</h2>
+                    <p class="text-slate-500 font-bold mt-2" id="results-subtitle">Fetching the best doctors for your criteria.</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest bg-white px-6 py-3 rounded-2xl border border-light">
+                    Sort: <span class="text-primary cursor-pointer hover:underline">Top Rated</span>
+                </div>
+            </div>
+
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Skeletons -->
+                <div class="h-64 skeleton rounded-[3rem]"></div>
+                <div class="h-64 skeleton rounded-[3rem]"></div>
+                <div class="h-64 skeleton rounded-[3rem]"></div>
+                <div class="h-64 skeleton rounded-[3rem]"></div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="no-results" class="hidden py-40 text-center space-y-6 bg-white rounded-[3rem] border border-light">
+                <div class="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto">
+                    <i data-lucide="search-x" class="w-10 h-10"></i>
+                </div>
+                <h3 class="text-2xl font-black text-slate-400">No doctors found matching <br> your criteria.</h3>
+                <button onclick="location.reload()" class="px-8 py-3 bg-slate-100 text-slate-400 rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition">Clear Search</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- App Script -->
+    <script type="module">
+        import { dataService } from '../js/services/data-service.js';
+        
+        lucide.createIcons();
+        
+        async function loadResults() {
+            const grid = document.getElementById('results-grid');
+            const noResults = document.getElementById('no-results');
+            const title = document.getElementById('results-title');
+            const subtitle = document.getElementById('results-subtitle');
+
+            const params = new URLSearchParams(window.location.search);
+            const location = params.get('location');
+            const spec = params.get('spec');
+            
+            document.getElementById('search-location').value = location || '';
+            document.getElementById('search-spec').value = spec || '';
+
+            try {
+                const doctors = await dataService.searchDoctors(spec || '', location || '');
+                
+                if (!doctors || doctors.length === 0) {
+                    grid.classList.add('hidden');
+                    noResults.classList.remove('hidden');
+                    title.innerText = 'No Specialists Found';
+                    subtitle.innerText = 'Try broadening your search criteria.';
+                    return;
+                }
+
+                grid.innerHTML = '';
+                title.innerText = `${doctors.length} Specialists Available`;
+                subtitle.innerText = `Verified doctors currently practicing in ${location || 'your area'}.`;
+                
+                doctors.forEach(doc => {
+                    const card = `
+                    <div class="bg-white p-10 rounded-[3rem] card-depth flex flex-col justify-between group">
+                        <div class="space-y-6">
+                            <div class="flex justify-between items-start">
+                                <div class="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden shadow-sm group-hover:scale-105 transition-transform duration-500">
+                                    <img src="${doc.profiles?.avatar_url || 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200'}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="px-3 py-1.5 bg-orange-50 text-orange-400 rounded-xl flex items-center gap-1.5">
+                                    <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                                    <span class="text-sm font-black text-slate-900">${doc.rating || '4.5'}</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-2xl font-heading font-black text-slate-900 group-hover:text-primary transition">${doc.profiles.full_name}</h3>
+                                <p class="text-xs font-black text-primary uppercase tracking-widest mt-1">${doc.specialization}</p>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-slate-50 text-slate-400 text-[10px] font-black uppercase rounded-lg">~15 m wait</span>
+                                <span class="px-3 py-1 bg-slate-50 text-slate-400 text-[10px] font-black uppercase rounded-lg">Verified</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-8 border-t border-slate-50 mt-10 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Clinic Fees</p>
+                                <p class="text-lg font-black text-slate-900">₹500</p>
+                            </div>
+                            <a href="doctor-profile.html?id=${doc.id}" class="h-14 px-8 bg-slate-900 text-white rounded-2xl flex items-center gap-3 font-black text-xs uppercase tracking-widest hover:bg-primary transition shadow-xl shadow-slate-900/10">
+                                Book Now <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+                            </a>
+                        </div>
+                    </div>`;
+                    grid.insertAdjacentHTML('beforeend', card);
+                });
+
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<p class="text-rose-500 font-bold italic py-10 col-span-2 text-center">Error searching doctors. Please try again.</p>';
+            }
+        }
+
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            const loc = document.getElementById('search-location').value;
+            const spec = document.getElementById('search-spec').value;
+            window.location.href = `search.html?location=${encodeURIComponent(loc)}&spec=${encodeURIComponent(spec)}`;
+        });
+
+        window.addEventListener('load', loadResults);
+    </script>
+</body>
+</html>

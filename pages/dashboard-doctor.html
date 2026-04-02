@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Qlinik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1F2937',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .sidebar-item.active { background: #8B5CF6; color: white; box-shadow: 0 10px 20px rgba(139, 92, 246, 0.2); }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-dark font-sans flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="hidden lg:flex flex-col w-72 bg-white border-r border-light sticky top-0 h-screen p-8">
+        <img src="../logo/primary.png" alt="Qlinik Logo" class="h-10 mb-12">
+        <nav class="flex-1 space-y-2">
+            <a href="#" class="sidebar-item active flex items-center gap-3 px-5 py-4 rounded-2xl font-bold transition">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span>Profile Overview</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-400 font-bold hover:bg-slate-100 transition">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+                <span>Manage Venues</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 px-5 py-4 rounded-2xl text-slate-400 font-bold hover:bg-slate-100 transition">
+                <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                <span>History</span>
+            </a>
+        </nav>
+        <div class="pt-8 border-t border-slate-100">
+            <button class="flex items-center gap-3 px-5 py-4 w-full text-rose-500 font-black uppercase tracking-widest text-[10px] hover:bg-rose-50 rounded-2xl transition">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 md:p-12 overflow-y-auto">
+        <header class="flex justify-between items-end mb-12">
+            <div class="space-y-1">
+                <h1 id="welcome-text" class="text-4xl font-heading font-black text-slate-900 tracking-tight">Welcome, Dr. Jenkins</h1>
+                <p class="text-slate-500 font-bold">Managing your professional practice profile.</p>
+            </div>
+            <a href="../index.html" target="_blank" class="px-6 py-4 border border-slate-200 rounded-2xl font-bold text-sm hover:bg-slate-50 transition flex items-center gap-2">
+                <i data-lucide="external-link" class="w-4 h-4"></i> Public Profile
+            </a>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <!-- Left Column: Profile Editor -->
+            <div class="lg:col-span-2 space-y-12">
+                <div class="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                    <h2 class="text-2xl font-heading font-black mb-10 flex items-center gap-3">
+                        <i data-lucide="user-cog" class="w-7 h-7 text-accent"></i>
+                        Basic Information
+                    </h2>
+                    
+                    <form id="profile-form" class="space-y-8">
+                        <div class="flex flex-col md:flex-row gap-10">
+                            <div class="w-40 h-40 bg-slate-100 rounded-[2.5rem] shrink-0 border-2 border-dashed border-slate-200 flex items-center justify-center group overflow-hidden relative">
+                                <img id="profile-preview" src="" class="hidden w-full h-full object-cover">
+                                <div class="text-center group-hover:scale-110 transition cursor-pointer">
+                                    <i data-lucide="camera" class="w-8 h-8 text-slate-300 mx-auto"></i>
+                                    <p class="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">Update</p>
+                                </div>
+                            </div>
+                            <div class="flex-1 space-y-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Full Name</label>
+                                    <input type="text" id="full_name" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition font-bold">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Professional Title / Specialization</label>
+                                    <input type="text" id="specialization" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition font-bold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Professional Biography (SEO Searchable)</label>
+                            <textarea id="bio" rows="6" class="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent transition font-bold"></textarea>
+                        </div>
+
+                        <button type="submit" class="bg-accent text-white px-12 py-5 rounded-[1.5rem] font-black text-lg hover:scale-105 transition-all shadow-xl shadow-accent/20">
+                            Save Profile Changes
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Practice Venues -->
+                <div class="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+                    <h2 class="text-2xl font-heading font-black mb-8 flex items-center gap-3">
+                        <i data-lucide="map-pins" class="w-7 h-7 text-secondary"></i>
+                        Active Venues
+                    </h2>
+                    
+                    <div id="venues-list" class="space-y-4">
+                        <!-- Skeletons -->
+                        <div class="p-6 bg-slate-50 rounded-3xl skeleton h-24"></div>
+                        <div class="p-6 bg-slate-50 rounded-3xl skeleton h-24"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Stats & Reviews -->
+            <div class="space-y-8">
+                <div class="bg-slate-900 p-10 rounded-[3rem] text-white space-y-10">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Platform Rank</p>
+                        <h4 class="text-4xl font-heading font-black">Top 1%</h4>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                            <span class="text-slate-400 font-bold">Joined</span>
+                            <span class="font-black">Jan 2024</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                            <span class="text-slate-400 font-bold">Total Patients</span>
+                            <span class="font-black" id="stat-total-patients">--</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400 font-bold">Patient Rating</span>
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="star" class="w-4 h-4 text-orange-400 fill-current"></i>
+                                <span class="font-black" id="stat-rating">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <h3 class="font-heading font-black text-xl mb-6">Recent Feedback</h3>
+                    <div id="reviews-list" class="space-y-6">
+                        <p class="text-slate-400 font-bold italic py-8 text-center text-sm">No reviews found yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- App Script -->
+    <script type="module">
+        import { dataService } from '../js/services/data-service.js';
+        import { getSupabase } from '../js/supabase-client.js';
+        
+        lucide.createIcons();
+        
+        // Mock Doctor ID (In real app, this comes from auth.session())
+        const myDocId = 'doctor-id-uuid-123'; 
+
+        async function initDashboard() {
+            try {
+                // Using a fallback for demo if ID not linked yet
+                const doctors = await dataService.getFeaturedDoctors(1);
+                const doc = await dataService.getDoctorById(doctors[0]?.id || myDocId);
+                
+                renderDashboard(doc);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderDashboard(doc) {
+            document.getElementById('welcome-text').innerText = `Welcome, ${doc.profiles?.full_name}`;
+            document.getElementById('full_name').value = doc.profiles?.full_name;
+            document.getElementById('specialization').value = doc.specialization;
+            document.getElementById('bio').value = doc.bio || '';
+            document.getElementById('stat-total-patients').innerText = doc.reviews_count * 12 || '1,248';
+            document.getElementById('stat-rating').innerText = doc.rating || '4.9';
+            
+            if (doc.profiles?.avatar_url) {
+                document.getElementById('profile-preview').src = doc.profiles.avatar_url;
+                document.getElementById('profile-preview').classList.remove('hidden');
+            }
+
+            // Render Venues
+            const venueList = document.getElementById('venues-list');
+            venueList.innerHTML = '';
+            
+            if (doc.doctor_clinics?.length > 0) {
+                doc.doctor_clinics.forEach(item => {
+                    const venue = `
+                    <div class="p-6 bg-slate-50 border border-slate-200 rounded-3xl flex justify-between items-center group hover:bg-white hover:border-accent/30 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-accent border border-slate-100 shadow-sm">
+                                <i data-lucide="building-2" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <p class="font-black text-slate-900">${item.clinics?.name}</p>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${item.clinics?.city || 'Downtown'}</p>
+                            </div>
+                        </div>
+                        <button class="p-3 text-slate-400 hover:text-accent transition">
+                            <i data-lucide="settings" class="w-5 h-5"></i>
+                        </button>
+                    </div>`;
+                    venueList.insertAdjacentHTML('beforeend', venue);
+                });
+            } else {
+                venueList.innerHTML = '<p class="text-slate-400 font-bold italic py-4">No practice venues linked yet.</p>';
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Profile Form Submit
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            alert('Supabase Update Logic Triggered: Profile information would be saved to DB.');
+        });
+
+        window.addEventListener('load', initDashboard);
+    </script>
+</body>
+</html>
